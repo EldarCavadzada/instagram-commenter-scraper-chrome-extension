@@ -19,43 +19,56 @@ async function DoScrape() {
     notifier_el.style.padding = "6px 10px 6px 10px";
     notifier_el.style.border = "5px solid rgb(255, 208, 0)";
     notifier_el.style.borderRadius = "7px";
-    notifier_el.innerHTML = "Instagram Comment Scraper (by v-User) <br/> Scraping process started...";
+    notifier_el.innerHTML = "Instagram Comment and User Scraper (by v-User) <br/> Scraping process started...";
     console.log("Scraping process started...");
     document.body.insertBefore(notifier_el, document.body.firstChild);
 
-    let all_comments_info = "";
+    let all_data_info = "";
     const loading_el = document.querySelector("[data-visualcompletion=loading-state],[role=progressbar]");
     let commentElements = document.querySelectorAll("[role=main] ul li div:not([role]) span");
+    let userElements = document.querySelectorAll("[role=main] a[role=link] span[dir=auto]");
 
-    if (loading_el && commentElements.length > 0) {
+    if (loading_el && (commentElements.length > 0 || userElements.length > 0)) {
         await doLoading();
-        console.log("Comments are loaded");
+        console.log("Data is loaded");
         commentElements = document.querySelectorAll("[role=main] ul li div:not([role]) span");
+        userElements = document.querySelectorAll("[role=main] a[role=link] span[dir=auto]");
 
         let uniqueComments = new Set();
+        let uniqueUsers = new Set();
 
         try {
             commentElements.forEach(function (el) {
                 const commentText = el.textContent.trim();
                 if (!uniqueComments.has(commentText)) {
                     uniqueComments.add(commentText);
-                    all_comments_info += commentText + "\r\n";
+                    all_data_info += `Comment: ${commentText}\r\n`;
+                }
+            });
+
+            userElements.forEach(function (el) {
+                const username = el.textContent.trim();
+                if (!uniqueUsers.has(username)) {
+                    uniqueUsers.add(username);
+                    const profileLink = `https://www.instagram.com/${username}`;
+                    all_data_info += `Username: ${username}, Profile Link: ${profileLink}\r\n`;
                 }
             });
         } catch (e) {
-            console.error("Error while processing comments:", e);
+            console.error("Error while processing data:", e);
         }
 
         const commentCount = uniqueComments.size;
-        const commentInfo = `Found ${commentCount} unique comments`;
-        console.log(commentInfo);
-        notifier_el.innerHTML = `Instagram Comment Scraper (by v-User) <br/> Scraping process finished and found ${commentCount} unique comments.`;
+        const userCount = uniqueUsers.size;
+        const summaryInfo = `Found ${commentCount} unique comments and ${userCount} unique users`;
+        console.log(summaryInfo);
+        notifier_el.innerHTML = `Instagram Comment and User Scraper (by v-User) <br/> Scraping process finished. Found ${commentCount} unique comments and ${userCount} unique users.`;
         console.log("Scraping process finished.");
 
         // Save as a text file
-        let fileName = "Comments scraped by vUser";
+        let fileName = "Comments and Users scraped by vUser";
         fileName = fileName.replace(/[\/\\?%*:|"<>.]/g, '-'); // Remove illegal chars from the file name
-        const uri = "data:text/plain;charset=utf-8," + encodeURIComponent(all_comments_info);
+        const uri = "data:text/plain;charset=utf-8," + encodeURIComponent(all_data_info);
         let downloadLink = document.createElement("a");
         downloadLink.href = uri;
         downloadLink.download = fileName;
@@ -63,8 +76,8 @@ async function DoScrape() {
         downloadLink.click();
     } else {
         notifier_el.style.backgroundColor = "#ad0000";
-        notifier_el.innerHTML = "Instagram Comment Scraper (by v-User) <br/> Error: Comments are not visible!";
-        console.log("Error: Comments are not visible!");
+        notifier_el.innerHTML = "Instagram Comment and User Scraper (by v-User) <br/> Error: Data is not visible!";
+        console.log("Error: Data is not visible!");
     }
 }
 
@@ -75,7 +88,8 @@ function doLoading() {
             if (loading_el) {
                 loading_el.scrollIntoView();
                 let comments = document.querySelectorAll("[role=main] ul li div:not([role]) span");
-                if (comments.length > 700) {
+                let users = document.querySelectorAll("[role=main] a[role=link] span[dir=auto]");
+                if (comments.length > 700 || users.length > 700) {
                     clearInterval(timerId);
                     resolve();
                 }
