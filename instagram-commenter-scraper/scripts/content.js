@@ -25,26 +25,28 @@ async function DoScrape() {
 
     let all_data_info = "";
     const loading_el = document.querySelector("[data-visualcompletion=loading-state],[role=progressbar]");
-    let commentElements = document.querySelectorAll("[role=main] ul li div:not([role]) span");
-    let userElements = document.querySelectorAll("[role=main] ul li div [role=link]");
 
-    if (loading_el || commentElements.length > 0 || userElements.length > 0) {
+    if (loading_el || document.querySelectorAll("[role=main] ul li").length > 0) {
         await doLoading();
         console.log("Comments and users are loaded");
-        commentElements = document.querySelectorAll("[role=main] ul li div:not([role]) span");
-        userElements = document.querySelectorAll("[role=main] ul li div [role=link]");
 
+        const commentElements = document.querySelectorAll("[role=main] ul li");
         let uniqueEntries = new Set();
 
         try {
-            userElements.forEach((el, index) => {
-                const username = el.textContent.trim();
-                const profileLink = `https://www.instagram.com/${username}`;
-                const commentText = commentElements[index]?.textContent.trim() || "No comment";
+            commentElements.forEach((el) => {
+                const usernameEl = el.querySelector("a[role=link]");
+                const commentTextEl = el.querySelector("span:not([role])");
 
-                if (!uniqueEntries.has(username + commentText)) {
-                    uniqueEntries.add(username + commentText);
-                    all_data_info += `Username: ${username}, Profile Link: ${profileLink}, Comment: ${commentText}\r\n`;
+                const username = usernameEl ? usernameEl.textContent.trim() : "Unknown";
+                const profileLink = usernameEl ? `https://www.instagram.com/${username}` : "Unknown";
+                const commentText = commentTextEl ? commentTextEl.textContent.trim() : "No comment";
+
+                const entry = `Username: ${username}, Profile Link: ${profileLink}, Comment: ${commentText}`;
+
+                if (!uniqueEntries.has(entry)) {
+                    uniqueEntries.add(entry);
+                    all_data_info += entry + "\r\n";
                 }
             });
         } catch (e) {
@@ -79,9 +81,8 @@ function doLoading() {
             let loading_el = document.querySelector("[data-visualcompletion=loading-state],[role=progressbar]");
             if (loading_el) {
                 loading_el.scrollIntoView();
-                let comments = document.querySelectorAll("[role=main] ul li div:not([role]) span");
-                let users = document.querySelectorAll("[role=main] ul li div [role=link]");
-                if (comments.length > 700 || users.length > 700) {
+                let comments = document.querySelectorAll("[role=main] ul li");
+                if (comments.length > 700) {
                     clearInterval(timerId);
                     resolve();
                 }
